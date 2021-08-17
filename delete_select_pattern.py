@@ -1,6 +1,6 @@
 import bpy
 bl_info = {
-    "name": " Delete/Select by Name",
+    "name": "Delete Select Pattern",
     "author": "1C0D",
     "version": (1, 0, 0),
     "blender": (2, 93, 0),
@@ -12,15 +12,19 @@ bl_info = {
 
 class DELETE_OT_obj_by_name (bpy.types.Operator):
     bl_idname = "delete.obj_by_name"
-    bl_label = "Delete/Select object by name"
+    bl_label = "Delete/Select pattern"
     bl_options = {'UNDO'}
 
-    name: bpy.props.StringProperty(default="", maxlen=100)
     sel: bpy.props.EnumProperty(
-        items=[("0", "Scene", ""), ("1", "Selected", "")])
+        items=[("0", "Scene", "in Scene Objects"), ("1", "Selected", "in Selected Objects")])
+    name: bpy.props.StringProperty(
+        default="", maxlen=100, description='enter part or whole name')
     mode: bpy.props.EnumProperty(
-        items=[("0", "Delete", ""), ("1", "Select", "")])
-    respect_case: bpy.props.BoolProperty(name='case sensitive')
+        items=[("0", "Delete", ""), ("1", "Select", "")], description='Delete or Select pattern')
+    respect_case: bpy.props.BoolProperty(
+        name='case sensitive', description='Sensitive to case')
+    extend: bpy.props.BoolProperty(
+        name='extend', description='Extend the existing selection')
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -36,13 +40,20 @@ class DELETE_OT_obj_by_name (bpy.types.Operator):
                 name = self.name if self.respect_case else self.name.lower()
                 target = obj.name if self.respect_case else obj.name.lower()
 
-            if name in target:
-                if self.mode == "0":
+            if self.mode == "0":
+                if name in target:
                     removed.append(obj.name)
                     objects = bpy.data.objects
                     objects.remove(obj, do_unlink=True)
+            else:
+                if self.extend:
+                    if name in target:
+                        obj.select_set(True)
                 else:
-                    obj.select_set(True)
+                    if name in target:
+                        obj.select_set(True)
+                    else:
+                        obj.select_set(False)
 
         if removed:
             bpy.ops.outliner.orphans_purge()
@@ -53,16 +64,15 @@ class DELETE_OT_obj_by_name (bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        layout.prop(self, 'mode')
         row = layout.row()
-        row.prop(self, 'sel', expand=True)
+        if self.mode == '0':
+            row.prop(self, 'sel', expand=True)
         layout.prop(self, "name", text='pattern')
         row = layout.row()
         row.prop(self, "respect_case")
         if self.mode == '1':
-            row.operator("object.select_all",
-                         text="deselect all", icon='SELECT_SET').action = 'DESELECT'
-
-        layout.prop(self, 'mode', expand=True)
+            row.prop(self, "extend")
 
 
 def draw(self, context):
