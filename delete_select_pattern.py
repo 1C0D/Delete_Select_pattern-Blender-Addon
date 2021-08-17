@@ -5,7 +5,7 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (2, 93, 0),
     "location": "View3D>ObjectMenu",
-    "description": "Delete objects by name",
+    "description": "Delete/Select objects by pattern",
     "category": "Menu"
 }
 
@@ -57,6 +57,7 @@ class DELETE_OT_obj_by_name (bpy.types.Operator):
 
         if removed:
             bpy.ops.outliner.orphans_purge()
+
         self.report({'INFO'}, f'{len(removed)} removed, details in Console')
         print(f'===> removed: {removed}')
 
